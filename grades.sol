@@ -62,7 +62,7 @@ contract grades {
         emit evento_revision(_idAlumno);
     }
     
-    // Funcion para ver los alumnos que han solicitado revision de examen
+    // Funcion para ver los alumnos que han solicitado revision de examen 
     function VerRevisiones() public view UnicamenteProfesor(msg.sender) returns (string [] memory) {
         // devolver las identidades de los alumnos que pidieron revision    
         return revisiones;
