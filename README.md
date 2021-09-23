@@ -1,3 +1,3 @@
-# charity
+# Solidity
 
-Smart contract to register charities (n quantity) and raise funds (with target)
+Smart contracts to practice solidity
