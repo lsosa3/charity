@@ -58,4 +58,5 @@ contract charity {
         
         return (targetReach, causes[_name].collected);
     }
+    
 }
