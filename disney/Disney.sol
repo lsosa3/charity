@@ -51,7 +51,7 @@ contract Disney {
         msg.sender.transfer(returnValue);
 
         //Get the amount of availables Tokens
-        uint Balance = balanceOf();
+        uint Balance = BalanceOf();
         require(_numTokens <= Balance, "Buy less Tokens");
 
         //Transfer Tokens to the buyer
@@ -62,29 +62,29 @@ contract Disney {
     }
 
     //Disney contract Token's balance
-    function balanceOf() public view returns (uint) {
+    function BalanceOf() public view returns (uint) {
         return token.balanceOf(address(this));
     }
 
     //Check client's Tokens
-    function clientTokens() public view returns (uint) {
+    function ClientTokens() public view returns (uint) {
         return token.balanceOf(msg.sender);
     }
 
     //Function to create more tokens
-    function createTokens(uint _numTokens) public justOwner(msg.sender) {
+    function CreateTokens(uint _numTokens) public JustOwner(msg.sender) {
         token.increaseTotalSupply(_numTokens);
     }
 
     //Check if is owner
-    modifier justOwner(address _address) {
+    modifier JustOwner(address _address) {
         require(_address == owner,"Dont have permission to execute, just Owner");
         _;
     }
 
 
 
-    // ------------------------- DISNEY MANAGEMENT  -------------------- //
+    // ------------------------- DISNEY ATTRACTION MANAGEMENT  -------------------- //
 
     //Events
     event enjoy_attaction(string, uint, address);
@@ -99,7 +99,7 @@ contract Disney {
     }
 
     //Mapping to bind an attraction to attraction's struct
-    mapping (string => attraction) public MappingAttractions;
+    mapping (string => attraction) public mappingAttractions;
 
     //Array to store attraction's names
     string [] attractions;
@@ -108,9 +108,9 @@ contract Disney {
     mapping (address => string []) attactionsClientHistory;
 
     //Create new attractions | Just execute disney
-    function newAttraction(string memory _attractionName, uint _price) public justOwner(msg.sender) {
+    function NewAttraction(string memory _attractionName, uint _price) public JustOwner(msg.sender) {
         //Create new attraction in Disney
-        MappingAttractions[_attractionName] = attraction(_attractionName, _price, true);
+        mappingAttractions[_attractionName] = attraction(_attractionName, _price, true);
 
         //Store attraction's name in attractions array
         attractions.push(_attractionName);
@@ -120,31 +120,31 @@ contract Disney {
     }
 
     //Inactivate attraction
-    function removeAttraction(string memory _attractionName) public justOwner(msg.sender) {
+    function RemoveAttraction(string memory _attractionName) public JustOwner(msg.sender) {
         //Check if attraction exists
-        require(keccak256(abi.encodePacked(MappingAttractions[_attractionName].name)) == keccak256(abi.encodePacked(_attractionName)), "Attraction don't exists");
+        require(keccak256(abi.encodePacked(mappingAttractions[_attractionName].name)) == keccak256(abi.encodePacked(_attractionName)), "Attraction don't exists");
 
         //Change to false attraction status
-        MappingAttractions[_attractionName].status = false;
+        mappingAttractions[_attractionName].status = false;
 
         //Emit event
         emit remove_attraction(_attractionName);
     }
 
     //View available attractions 
-    function availableAttractions() public view returns (string [] memory) {
+    function AvailableAttractions() public view returns (string [] memory) {
         return attractions;
     }
 
-    function useAttraction (string memory _attractionName) public {
+    function UseAttraction (string memory _attractionName) public {
         //Attraction price in tokens
-        uint attractionPriceToken = MappingAttractions[_attractionName].price;
+        uint attractionPriceToken = mappingAttractions[_attractionName].price;
 
         //Check if attraction is available
-        require(MappingAttractions[_attractionName].status == true, "Attraction unavailable");
+        require(mappingAttractions[_attractionName].status == true, "Attraction unavailable");
 
         //Check if client have enoght token
-        require(clientTokens() >= attractionPriceToken, "Don't have ehough tokens to buy this attractio, please buy more tokens");
+        require(ClientTokens() >= attractionPriceToken, "Don't have ehough tokens to buy this attraction, please buy more tokens");
 
         /*Client pay for attraction
         Was nessesary to create a new transfer function called "transferDisney"
@@ -161,17 +161,109 @@ contract Disney {
     }
 
     //Show client attraction history
-    function showClientHistory() public view returns (string [] memory) {
+    function ShowAttractionClientHistory() public view returns (string [] memory) {
         return attactionsClientHistory[msg.sender];
     }
 
+    // ------------------------- DISNEY ATTRACTION MANAGEMENT END -------------------- //
+
+
+
+    // ------------------------- DISNEY FOODS MANAGEMENT START -------------------- //
+
+    //Events
+    event buy_food(string, uint, address);
+    event new_food(string, uint);
+    event remove_food(string);
+
+    //Struct for foods
+    struct food {
+        string name;
+        uint price;
+        string foodType;
+        bool status;
+    }
+
+    //Mapping to bind a food to food's struct
+    mapping (string => food) public mappingFoods;
+
+    //Array to store food's names
+    string [] foods;
+
+    //Mapping to bind an address (client) to its historical data in DISNEY
+    mapping (address => string []) foodsClientHistory;
+
+    //Create new foods | Just execute disney
+    function NewFood(string memory _foodName, string memory _foodType,  uint _price) public JustOwner(msg.sender) {
+        //Create new food in Disney
+        mappingFoods[_foodName] = food(_foodName, _price, _foodType, true);
+
+        //Store food's name in attractions array
+        foods.push(_foodName);
+
+        //Emit event for new attraction
+        emit new_food(_foodName, _price);
+    }
+
+    //Inactivate food
+    function RemoveFood(string memory _foodName) public JustOwner(msg.sender) {
+        //Check if food exists
+        require(keccak256(abi.encodePacked(mappingFoods[_foodName].name)) == keccak256(abi.encodePacked(_foodName)), "Food don't exists");
+
+        //Change to false food status
+        mappingFoods[_foodName].status = false;
+
+        //Emit event
+        emit remove_food(_foodName);
+    }
+
+    //View available foods 
+    function AvailableFoods() public view returns (string [] memory) {
+        return foods;
+    }
+
+    //Buy food
+    function BuyFood (string memory _foodName) public {
+        //food price in tokens
+        uint foodPriceToken = mappingFoods[_foodName].price;
+
+        //Check if food is available
+        require(mappingFoods[_foodName].status == true, "Food unavailable");
+
+        //Check if client have enoght token
+        require(ClientTokens() >= foodPriceToken, "Don't have ehough tokens to buy this food, please buy more tokens");
+
+        /*Client pay for food
+        Was nessesary to create a new transfer function called "transferDisney"
+        because the address taken were wrong, due to the msg.sender that transfer 
+        and transferFrom function were getting was the contract address
+        */
+        token.transferDisney(msg.sender, address(this), foodPriceToken);
+        
+        //Store in food history client this food
+        foodsClientHistory[msg.sender].push(_foodName);
+
+        //Emit buy food event
+        emit buy_food(_foodName, foodPriceToken, msg.sender);
+    }
+
+    //Show client food history
+    function ShowClientFoodHistory() public view returns (string [] memory) {
+        return foodsClientHistory[msg.sender];
+    }
+
+    // ------------------------- DISNEY FOODS MANAGEMENT END -------------------- //
+
+
+    // ------------------------- DISNEY COMMON FUNCTIONS START -------------------- //
+
     //Return tokens to Disney
-    function returnTokens(uint _numTokens) public payable {
+    function ReturnTokens(uint _numTokens) public payable {
         //Check if _numTokens is higher than cero
         require(_numTokens > 0, "The tokens must be higher than cero");
 
         //Check if the tokens qty is a positive number
-        require (clientTokens() >= _numTokens, "The tokens QTY must be lower");
+        require (ClientTokens() >= _numTokens, "The tokens QTY must be lower");
 
         //The client returns the tokens
         token.transferDisney(msg.sender, address(this), _numTokens);
@@ -179,4 +271,6 @@ contract Disney {
         //Disney returns the eth
         msg.sender.transfer(TokensPrice(_numTokens));
     }
+
+    // ------------------------- DISNEY COMMON FUNCTIONS END -------------------- //
 }
