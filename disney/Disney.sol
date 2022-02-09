@@ -90,6 +90,8 @@ contract Disney {
     event enjoy_attaction(string, uint, address);
     event new_attraction(string, uint);
     event remove_attraction(string);
+    event update_attraction(string, uint);
+    event activate_attraction(string);
 
     //Struct for attractions
     struct attraction {
@@ -129,6 +131,30 @@ contract Disney {
 
         //Emit event
         emit remove_attraction(_attractionName);
+    }
+
+    //Activate Attraction
+    function ActivateAttraction(string memory _attractionName) public JustOwner(msg.sender) {
+        //Check if food exists
+        require(keccak256(abi.encodePacked(mappingAttractions[_attractionName].name)) == keccak256(abi.encodePacked(_attractionName)), "Attraction don't exists");
+
+        //Change to true Attraction status
+        mappingAttractions[_attractionName].status = true;
+
+        //Emit event
+        emit activate_attraction(_attractionName);
+    }
+
+    //Update Attraction price
+    function UpdateAttractionPrice(string memory _attractionName, uint _price) public JustOwner(msg.sender) {
+        //Check if attraction exists
+        require(keccak256(abi.encodePacked(mappingAttractions[_attractionName].name)) == keccak256(abi.encodePacked(_attractionName)), "Attraction don't exists");
+
+        //Change attraction price
+        mappingAttractions[_attractionName].price = _price;
+
+        //Emit event
+        emit update_attraction(_attractionName, _price);
     }
 
     //View available attractions 
@@ -175,6 +201,8 @@ contract Disney {
     event buy_food(string, uint, address);
     event new_food(string, uint);
     event remove_food(string);
+    event update_food(string, uint);
+    event activate_food(string);
 
     //Struct for foods
     struct food {
@@ -215,6 +243,29 @@ contract Disney {
 
         //Emit event
         emit remove_food(_foodName);
+    }
+
+    //Activate food
+    function ActivateFood(string memory _foodName) public JustOwner(msg.sender) {
+        //Check if food exists
+        require(keccak256(abi.encodePacked(mappingFoods[_foodName].name)) == keccak256(abi.encodePacked(_foodName)), "Food don't exists");
+
+        //Change to true food status
+        mappingFoods[_foodName].status = true;
+
+        //Emit event
+        emit activate_food(_foodName);
+    }
+
+    //Update food price
+    function UpdateFoodPrice(string memory _foodName, uint _price) public JustOwner(msg.sender) {
+        require(keccak256(abi.encodePacked(mappingFoods[_foodName].name)) == keccak256(abi.encodePacked(_foodName)), "Food don't exists");
+
+        //Change food price
+        mappingFoods[_foodName].price = _price;
+
+        //Emit event
+        emit update_food(_foodName, _price);
     }
 
     //View available foods 
