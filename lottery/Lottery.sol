@@ -12,18 +12,22 @@ contract Lottery {
     //Lottery address owner
     address public owner;
     address public contractt;
+    // Ticket prize
+    uint public ticketPrice;
 
     //Tokens created
     uint public tokens_created = 10000;
 
     //Event token buy
     event buy_token(address, uint);
+    event retuned_tokens(uint, address);
 
     //Constructor
     constructor () public {
         token = new ERC20Basic(tokens_created);
         owner = msg.sender;
         contractt = address(this);
+        ticketPrice = 1;
     }
 
     // ---------------------------------------------------------------------//
@@ -35,6 +39,10 @@ contract Lottery {
     modifier JustOwner(address _addr) {
         require (_addr == owner, "Don't have enough permission to do this!!!");
         _;
+    }
+
+    function UpdateTicketPrice(uint _price) public JustOwner(msg.sender) {
+        ticketPrice = _price;
     }
 
     // Get the price of token in eth
@@ -74,19 +82,41 @@ contract Lottery {
         emit buy_token(msg.sender, _numTokens);
     }
 
-    //Retuns the available tokens in the contract
+    // Retuns the available tokens in the contract
     function AvailableTokens() public view returns (uint) {
         return token.balanceOf(contractt);
     }
 
-    //Get the prize acumulated amount
+    // Get the prize acumulated amount
     function Prize() public view returns (uint) {
         return token.balanceOf(owner);
     }
 
-    //Check client tokens
+    // Check client tokens
     function MyTokens() public view returns (uint) {
         return token.balanceOf(msg.sender);
+    }
+
+    // Return tokens to lottery
+    function ReturnTokens(uint _numTokens) public payable {
+        // Check if _numTokens is higher than cero
+        require(_numTokens > 0, "The tokens must be higher than cero");
+
+        // Check if the tokens qty is a positive number
+        require (MyTokens() >= _numTokens, "The tokens QTY must be lower");
+
+        // The client returns the tokens
+        token.transferLottery(msg.sender, address(this), _numTokens);
+
+        // Lottery pays the returned tokens in eth
+        msg.sender.transfer(TokenPrice(_numTokens));
+
+        // Emit returned tokens event
+        emit retuned_tokens(_numTokens, msg.sender);
+    }
+
+    function CheckContractEthBalance() public view returns (uint) {
+        return address(this).balance;
     }
 
     // --------------------------- TOKEN END-----------------------------------//
@@ -94,9 +124,6 @@ contract Lottery {
 
 
     // --------------------------- LOTTERY -----------------------------------//
-
-    // Ticket prize
-    uint public ticketPrice = 5;
 
     // Mapping to bind the ticket buyer and ticket numbers
     mapping (address => uint []) buyer_tickets;
