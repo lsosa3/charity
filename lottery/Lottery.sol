@@ -102,16 +102,16 @@ contract Lottery {
     mapping (address => uint []) buyer_tickets;
 
     // Mapping to bing the ticket winner to the address
-    mapping (uint => address) winner_tickets;
+    mapping (uint => address) tickets_to_addr;
 
     // Random number
     uint randNonce = 0;
 
     //Generated tickets numbers
-    uint [] buyedTickets;
+    uint [] purchasedTickets;
 
-    // Event when a ticket is buyed
-    event buyed_ticket(uint);
+    // Event when a ticket is purchased
+    event purchased_ticket(uint, address);
 
     // Event when there is a winner
     event winner_ticket(uint);
@@ -121,7 +121,7 @@ contract Lottery {
         // Total amount of tickets to buy
         uint totalAmount = _tickets * ticketPrice;
 
-        //Check if buyer have enough tokens
+        // Check if buyer have enough tokens
         require(MyTokens() >= totalAmount, "Don't have enough tokens, please buy more tokens or buy less tickets");
 
         /*Transfer the buyers tokens to the contract owner
@@ -136,8 +136,51 @@ contract Lottery {
         this takes  the time stamp, the buyer address and a nonce (a number that we use just one time)
         just to not execute this with the same parameters twice them we use 
         keccak256 to convert this entries to an aleatory hash and then into an
-        uint then we use % 1000 to turn it into a 4 digits number
+        uint then we use % 1000 to turn it into a random 4 digits number between 0 - 9999
         */
+        for(uint i = 0; i < _tickets; i++) {
+            uint random = uint(keccak256(abi.encodePacked(now, msg.sender, randNonce))) % 10000;
+            randNonce++;
+            // Store the tickets 
+            buyer_tickets[msg.sender].push(random);
+
+            // purchased tickets
+            purchasedTickets.push(random);
+
+            // DNA ticket
+            tickets_to_addr[random] = msg.sender;
+
+            // Emit event
+            emit purchased_ticket(random, msg.sender);
+        }
+    }
+
+    // View purchased tickets
+    function ShowPurchasedTickets() public view returns (uint [] memory) {
+        return buyer_tickets[msg.sender];
+    }
+
+    //Chose winner function
+    function ChooseWinner() public JustOwner(msg.sender) {
+        uint lengthh = purchasedTickets.length;
+        
+        // Check if there are purchased tickets
+        require(lengthh > 0, "There are no tickets for the lottery!!!");
+
+        // 1 - Pick a random position in the array
+        uint arrayPos = uint(uint(keccak256(abi.encodePacked(now))) % lengthh);
+
+        // 2 - Pick the ticket  through the random array position
+        uint winnerTicket = purchasedTickets[arrayPos];
+
+        // Emit winner event
+        emit winner_ticket(winnerTicket);
+
+        // Get the winner addr
+        address winnerAddr = tickets_to_addr[winnerTicket];
+
+        // Send tokens to winner
+        token.transferLottery(msg.sender, winnerAddr, Prize());
     }
 
     // --------------------------- LOTTERY END-----------------------------------//
