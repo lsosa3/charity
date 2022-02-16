@@ -30,6 +30,42 @@ contract OMS_COVID {
         require (_addr == OMS, "Don't have enough permission to do this!!!");
         _;
     }
+    
     // Function to validate new health centers
-    // Function to create a smart contract
+    function ValidateHealthCenter(address _healthCenter) public JustOwner(msg.sender) {
+        // Validate the address of the health center
+        health_center_validity[_healthCenter] = true;
+
+        // Emit validity event
+        emit NewHealthCenterValidated(_healthCenter);
+    }
+
+    // Function to create a smart contract for a health center
+    function HealthCenterFactory() public {
+        // Check for validated health centers
+        require(health_center_validity[msg.sender] == true, "You are not allowed to do this");
+
+        // Generate a new smart contract -> generate its address
+        address health_center_contract = address (new HealthCenter(msg.sender));
+
+        // Store new smart contract address in the arrau
+        healthCentersAddress.push(msg.sender); 
+
+        // Emit new contract event
+        emit NewContract(health_center_contract, msg.sender);
+        
+    }
+
+
+}
+
+// Health Center Smart Contract
+contract HealthCenter {
+    address public healthCenterAddress;
+    address public contractAddress;
+
+    constructor (address _address) public {
+        healthCenterAddress = _address;
+        contractAddress = address(this);
+    }
 }
