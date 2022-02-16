@@ -26,6 +26,10 @@ contract OMS_COVID {
     event NewContract (address, address);
 
     // Modifier to allow only OMS to execute som functions
+    modifier JustOwner(address _addr) {
+        require (_addr == OMS, "Don't have enough permission to do this!!!");
+        _;
+    }
     // Function to validate new health centers
     // Function to create a smart contract
 }
