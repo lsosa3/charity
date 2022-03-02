@@ -37,10 +37,8 @@ contract InsuranceFactory is BasicOperations {
     address Insurance;
     address payable public InsuranceCompany;
 
-
     // Mappings and arrays
 
-    
     // Mappings address to client struct
     mapping(address => client) public MappingCustomers;
     // Mappings service name to service struct
@@ -55,5 +53,32 @@ contract InsuranceFactory is BasicOperations {
     string [] private ServicesNames;
     // Arry to store labs address
     address [] LabsAddress;
- 
+
+    function CheckOnlyInsured(address _insuredAddress) public view {
+        require(MappingCustomers[_insuredAddress].ClientAuthorization == true, "Client not authorized, please check");
+    }
+    // Modifiers to apply restrictions on insured and insurance
+    modifier OnlyInsured(address _insuredAddress) {
+        CheckOnlyInsured(_insuredAddress);
+        _;
+    }
+
+    modifier OnlyInsurance(address _insuranceAddress) {
+        require(InsuranceCompany == _insuranceAddress, "You are not authorized to do this!");
+        _;
+    }
+
+    modifier IsuredOrInsurance(address _insuredAddress, address _inCommingAddress) {
+        require((MappingCustomers[_insuredAddress].ClientAuthorization == true && _insuredAddress == _inCommingAddress) || (InsuranceCompany == _inCommingAddress), "Only insured or insurance company are authorized");
+        _;
+    }
+
+    // Events
+    event PurchasedEvent(uint256);
+    event ServicedProvidedEvent(address, string, uint256);
+    event LabCreatedEvent(address, address);
+    event NewClientEvent(address, address);
+    event RemoveClientEvent(address);
+    event ServiceCreatedEvent(string, uint256);
+    event RemoveServiceEvent(string);
 }
