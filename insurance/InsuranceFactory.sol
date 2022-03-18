@@ -68,8 +68,8 @@ contract InsuranceFactory is BasicOperations {
         _;
     }
 
-    modifier ClientOrInsurance(address _clientAddress, address _inCommingAddress) {
-        require((MappingClients[_clientAddress].ClientAuthorization == true && _clientAddress == _inCommingAddress) || (InsuranceCompany == _inCommingAddress), "Only client or insurance company are authorized");
+    modifier OnlyClientOrInsurance(address _clientAddress, address _requestingAddress) {
+        require((MappingClients[_clientAddress].ClientAuthorization == true && _clientAddress == _requestingAddress) || (InsuranceCompany == _requestingAddress), "Only client or insurance company are authorized");
         _;
     }
 
@@ -78,7 +78,7 @@ contract InsuranceFactory is BasicOperations {
     event ServicedProvidedEvent(address, string, uint256);
     event LabCreatedEvent(address, address);
     event NewClientEvent(address, address);
-    event RemoveClientEvent(address);
+    event UnsubscribeClientEvent(address);
     event ServiceCreatedEvent(string, uint256);
     event RemoveServiceEvent(string);
 
@@ -104,6 +104,28 @@ contract InsuranceFactory is BasicOperations {
     function showClients() public view OnlyInsurance(msg.sender) returns (address [] memory) {
         return Clients;
     }
+    
+    function ShowClientHistory(address _clientAddress, address _requestingAddress) public view OnlyClientOrInsurance(_clientAddress, _requestingAddress) returns (string memory) {
+        string memory history = "";
+        address clientContractAddress = MappingClients[_clientAddress].ClientContract;
+
+        for(uint i = 0; i < ServicesNames.length; i++) {
+            if(MappingServices[ServicesNames[i]].ServiceStatus 
+                && InsuranceHealthRecord(clientContractAddress).ClientServiceStatus(ServicesNames[i]) == true) {
+                (string memory serviceName, uint servicePrice) = InsuranceHealthRecord(clientContractAddress).ClientHistory(ServicesNames[i]);
+
+                history = string(abi.encodePacked(history, "(", serviceName, ", ", uint2str(servicePrice), ") ------ "));
+            }
+        }
+
+        return history;
+    }
+
+    function unsubscribeClient(address _clientAddress) public OnlyInsurance(msg.sender) {
+        MappingClients[_clientAddress].ClientAuthorization = false;
+        InsuranceHealthRecord(MappingClients[_clientAddress].ClientContract).Unsubscribe;
+        emit UnsubscribeClientEvent(_clientAddress);
+    }
 }
 
 contract InsuranceHealthRecord is BasicOperations {
@@ -128,6 +150,45 @@ contract InsuranceHealthRecord is BasicOperations {
         owner.tokens = _token;
         owner.insurance = _insurance;
         owner.insuranceCompany = _insuranceCompany;
+    }
+
+    struct RequestedServices {
+        string serviceName;
+        uint servicePrice;
+        bool serviceStatus;
+    }
+
+    struct RequestedServicesLab {
+        string serviceName;
+        uint servicePrice;
+        address labAddress;
+    }
+
+    mapping (string => RequestedServices) clientHistory;
+    RequestedServicesLab [] RequestedServicesLabHistory;
+
+    modifier OnlyOwner(address _address) {
+        require(_address == owner.ownerAddress, "You're not the owner");
+        _;
+    }
+
+    event selfDestructEvent(address);
+
+    function HistoryRequestedServicesLab() public view returns (RequestedServicesLab [] memory) {
+        return RequestedServicesLabHistory;
+    }
+
+    function ClientHistory(string memory _serviceName) public view returns (string memory nombreServicio, uint servicePrice) {
+        return (clientHistory[_serviceName].serviceName, clientHistory[_serviceName].servicePrice);
+    }
+
+    function ClientServiceStatus(string memory _serviceName) public view returns (bool) {
+        return clientHistory[_serviceName].serviceStatus;
+    }
+
+    function Unsubscribe() public OnlyOwner(msg.sender) {
+        emit selfDestructEvent(msg.sender);
+        selfdestruct(msg.sender);
     }
 }
 
